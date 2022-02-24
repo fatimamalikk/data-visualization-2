@@ -1,17 +1,7 @@
----
----
-title: "F1 Race Wins Analysis"
-author: "Fatima Arshad"
-date: "`r Sys.Date()`"
-output:
-  prettydoc::html_pretty:
-    theme: caymen
-    highlight: github
----
+## **Data Visualization 02 - Term Project**
+### by Fatima Arshad
 
 Formula One (also known as Formula 1 or F1) is the highest class of international racing for open-wheel single-seater formula racing cars sanctioned by the Fédération Internationale de l'Automobile (FIA). The World Drivers' Championship, which became the FIA Formula One World Championship in 1981, has been one of the premier forms of racing around the world since its inaugural season in 1950. Formula One cars are the fastest regulated road-course racing cars in the world, owing to very high cornering speeds achieved through the generation of large amounts of aerodynamic downforce. A Formula One season consists of a series of races, known as Grands Prix, which take place worldwide on both purpose-built circuits and closed public roads. Formula 1 recently completed its 70 years anniversary. Lewis Hamilton clinched his 7th world title equaling Michael Schumachers record. The purpose of this study is to explore the best F1 drivers over the past 70 years.
-
-
 
 
 ## **Dataset**
@@ -144,36 +134,45 @@ panel.background = element_blank(), axis.line = element_line(colour = "black"))
 ```
 The figure above shows the average laps for the top 10 tracks completed over an average of one hour and thirty minutes. The number of laps in a race is obtained by dividing 305 by the length of a lap, which differs from track to track. The duration of the race cannot be more than 2 hours. If the allocated time of 2 hours is exceeded, the race is considered to be finished at the end of the ongoing lap. The line graph above shows that drivers could finish the greatest number of laps i.e. 194 on the racing track situated in Indianapolis, followed by Sakhir with 84 laps. 
 
-### Visualize team Alpha Romeo and its winners
 
-The density plot/voilin plot below visualizes the most successful drivers of team Alpha Romeo/Ferrari:
-most wins by team
+### Visualize top ten winning teams in the history of formula1 race
+
+The boxplot below visualizes the top ten winning teams in the history of formula 1 race with respect to lap time. Upon hover over the points a tooltip appears with the actual number of laps completed by the team.
 
 ```{r, fig.width = 11, fig.height=5.5, echo = FALSE, message= FALSE,warning = FALSE}
 #df <- as.data.table(database)
-df_team <- df[,
-                   .(winner=.N),
-                   by = .(team) ]
-#df_countries[order(df_countries$mean_lap)]  %>% top_n(10)
 
-df_top_teams <- df_team[order(df_team$winner),] %>% top_n(10)
+top_teams_list <- list('Ferrari', 'Mercedes', 'McLaren Mercedes','Williams Renault', 'Lotus Ford', 'McLaren Honda', 'Red Bull Racing Renault', 'Renault', 'McLaren Ford', 'McLaren TAG')
+
+df_teamlap <- df[,
+              .(laps),
+              by = .(team) ] %>% filter(team == top_teams_list)
+
+df_teamlap <- df_teamlap[order(df_teamlap$laps),]
 
 
-ggplot(data=df_top_teams, aes(x=team, y=winner,group=1)) +
-  geom_line(color="salmon", size=2) +
-  geom_point(color="chocolate", size=3.5) +
-  ggtitle("Scatterplot of top 10 F1 race tracks") +
-  labs(x="", y="Average value of laps\nper race track") +
-  theme(axis.title.y = element_text(size=7)) +
-  theme(axis.text = element_text(size=6)) +
-  theme(plot.title = element_text(size=10, hjust=0)) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-panel.background = element_blank(), axis.line = element_line(colour = "black"))
-  #theme_bw()
+df_teamlap$team <- as.factor(df_teamlap$team)
+
+
+#########################
+# boxplot of strength within categories
+library(ggiraph)
+winning_teams <-
+    ggplot(df_teamlap, aes(x = team, y = as.numeric(laps))) + 
+    geom_boxplot_interactive(aes(fill = team), outlier.shape = NA) + 
+    geom_jitter_interactive(aes(tooltip = laps, data_id = team, color = team), width = 0.55, height = 1, alpha = 0.25) + # use this layer for points with tooltips
+    labs(x = '', y = 'Laps', title = 'Top ten winning teams ') +
+    theme_light() +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+          legend.position = 'none')
+
+# show the boxplot
+girafe(ggobj = winning_teams,
+       options = list(opts_hover_inv(css = "opacity:0.1;")))
 
 
 ```
-The line graph above shows the top ten teams with the most number of wins during seasons 1050-2020. As illustrated in the graph, team Ferrari secured significantlu higher wins i.e. 239 than its counterparts. Second highest wins were secured by Mercedes followed by McLaren Mercedes on the third position.
+The boxplot above illustrates top ten teams securing the highest number of wins in the history of formula1 racing. It also shows the laps completed by each team in each competition. The data points jitter around Ferrari in the figure confirms that the most wins were secured by ferrari team and the least wins amongst the ten secured by Mclaren TAG team. Moreover, it is visible that Lotus Ford and McLaren Ford have a wide range of number of laps completed in their entire racing career. 
 
 ### **Racing Bar Chart Visualization for Most Wins by F1 Drivers (2015-2020)**
 
@@ -237,4 +236,4 @@ knitr::include_graphics(gif)
 
 ## **Summary**
 
-I webscraped F1 race results from the past 70 seasons from the F1 website and cleaned the dataframe. Then we visualized the results via various graphs and found out that Lewis Hamilton is the most successful F1 driver in terms of race wins followed closely by Michael Schumacher. The top 5 most successful drivers had less wins in initial 2-3 years of their racing career but went on to dominate for the next 5-6 years. For race results since 2015, again Lewis Hamilton has showed his dominant form and has the highest number of wins followed by Nico Rosberg who although retired after 2016 season still ranks in 2nd place.
+We visualized the results via various graphs and found out that Lewis Hamilton is the most successful F1 driver in terms of race wins followed closely by Michael Schumacher. The top 5 most successful drivers had less wins in initial 2-3 years of their racing career but went on to dominate for the next 5-6 years. For race results since 2015, again Lewis Hamilton has showed his dominant form and has the highest number of wins followed by Nico Rosberg who although retired after 2016 season still ranks in 2nd place. Lastly, team Ferrari was the unprecedented winner in the history of formula1 racing.
