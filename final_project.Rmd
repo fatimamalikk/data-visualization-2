@@ -1,0 +1,241 @@
+---
+---
+title: "F1 Race Wins Analysis"
+author: "Fatima Arshad"
+date: "`r Sys.Date()`"
+output:
+  prettydoc::html_pretty:
+    theme: caymen
+    highlight: github
+---
+
+Formula One (also known as Formula 1 or F1) is the highest class of international racing for open-wheel single-seater formula racing cars sanctioned by the Fédération Internationale de l'Automobile (FIA). The World Drivers' Championship, which became the FIA Formula One World Championship in 1981, has been one of the premier forms of racing around the world since its inaugural season in 1950. Formula One cars are the fastest regulated road-course racing cars in the world, owing to very high cornering speeds achieved through the generation of large amounts of aerodynamic downforce. A Formula One season consists of a series of races, known as Grands Prix, which take place worldwide on both purpose-built circuits and closed public roads. Formula 1 recently completed its 70 years anniversary. Lewis Hamilton clinched his 7th world title equaling Michael Schumachers record. The purpose of this study is to explore the best F1 drivers over the past 70 years.
+
+
+
+
+## **Dataset**
+
+The data was accessed from the its official website of [Formula One](https://www.formula1.com/en/results.html/2020/races.html) and is uploaded on my [github] (https://raw.githubusercontent.com/fatimamalikk/data-visualization-2/master/project_data). The website has a results page that lists the results for all seasons since 1950. Success of a driver was measured using the number of races won.
+
+```{r, include=FALSE, message=FALSE, warning=FALSE}
+# Set Cran mirror to avoid error
+local({r <- getOption("repos")
+       r["CRAN"] <- "http://cran.r-project.org" 
+       options(repos=r)
+})
+
+# Load libraries
+library(tidyverse)
+library(data.table)
+library(rvest)
+library(gganimate)
+library(stringr)
+#install.packages("gifski")
+library(gifski)
+library(knitr)
+```
+
+The following dataframe shows the race results for all the seasons in range 1050- 2020:
+
+```{r, echo = FALSE, message= FALSE,warning = FALSE}
+database <- read_csv('https://raw.githubusercontent.com/fatimamalikk/data-visualization-2/master/project_data/f1_results.csv')
+table_format <- tail(database)
+kable(table_format)
+
+```
+
+## Data Visualization
+
+### Visualize F1 racing tracks of top 10 countries
+
+The bar graph below visualizes the most successful drivers of seasons 1050-2020:
+
+```{r, fig.width = 5, fig.height = 3 , echo = FALSE, message= FALSE,warning = FALSE}
+df <- as.data.table(database)
+df_countries <- df[,
+                   .(mean_lap = mean(as.numeric(laps), na.rm=TRUE)),
+                   by = .(race_name) ]
+
+df_top_countries <- df_countries[order(df_countries$mean_lap)]  %>% top_n(10)
+
+ggplot(df_top_countries, aes(mean_lap, fill=factor(race_name))) +
+  geom_density(alpha=0.5) +
+  labs(title = "Price distribution for flats in different conditions")
+
+ggplot(df_top_countries, aes(race_name, mean_lap)) + 
+       geom_line() +
+       geom_point() + 
+       #geom_smooth(method = 'lm', colour='cyan4') +
+       labs(title='Scatter Plot', x='Race Track', y='Mean of Laps') +
+       theme_classic()
+
+df_box <- df[,
+              .(race_name, laps) ]
+df_box <- df_box %>% top_n(20)
+ggplot(df_box, aes(x=factor(race_name), y=laps)) +
+  geom_boxplot(color= "#006D77", fill= "#66B7B0", alpha=0.7) +
+  labs(x="District") +
+  theme_bw()
+
+```
+The number of laps in a race is obtained by dividing 305 by the length of a lap, which differs from track to track. The duration of the race cannot be more than 2 hours. If the allocated time of 2 hours is exceeded, the race is considered to be finished at the end of the ongoing lap. The figure above shows the average laps for the top 10 tracks. 
+
+
+### Top 5 most no of wins by F1 drivers (1950-2020)
+
+The bar graph below visualizes the most successful drivers of seasons 1050-2020:
+
+```{r, fig.width = 8, fig.height = 5 , echo = FALSE, message= FALSE,warning = FALSE}
+
+database %>% 
+  group_by(winner) %>%
+  summarize(total_wins = n()) %>%
+  arrange(desc(total_wins)) %>%
+  head(5) %>%
+  ggplot(aes(x = reorder(winner, total_wins), y = total_wins, fill = winner,label = total_wins)) + geom_col() + coord_flip() +geom_text(hjust = -0.3) + theme_classic() + theme(legend.position = "none",plot.title=element_text(hjust = 0.5,face="bold")) +
+  labs( x = "F1 Race Winners", y = "Total no of race wins", title = "Top 5 most no of wins by F1 drivers (2010-2020)")
+  
+```
+
+As evident from the figure above, Lewis Hamilton has been the most successful F1 driver of all time with 95 wins followed by Michael Schumacher with 91 wins and Sebastian Vettel on third position with 53 wins.
+
+### Top 5 most successful drivers winning progression over their career
+
+We previously found out the top 5 most successful drivers for the tenure 1050-2020. Next, we will take a deeper dive into how the top 5 drivers secured wins over the their racing careers:
+
+```{r, fig.width = 11, fig.height=5.5, echo = FALSE, message= FALSE,warning = FALSE}
+
+# Extract years from date column
+database$year <-str_sub(database$race_date, start= -4)
+
+#Filter database for top 5 most successful drivers
+drivers <- c("Lewis Hamilton","Michael Schumacher", "Sebastian Vettel", "Alain Prost", "Ayrton Senna")
+top_5_stats<- database %>% filter(winner %in% drivers)
+
+# Convert year column to int
+top_5_stats <- top_5_stats %>% mutate(year = as.numeric(year))
+
+# Aggregate no of wins for each year for the 5 drivers
+top_5_per_year<- top_5_stats %>% 
+  group_by(year,winner) %>%
+  count(winner)
+
+# Calculate the cumulative sum of the wins per year for each driver
+top_5_per_year_cs <- top_5_per_year %>% group_by(winner) %>% arrange(winner,year) %>% mutate(cs = cumsum(n))
+
+# Visualize the no of wins for each driver over their racing career  
+top_5_per_year_cs %>% ggplot(aes(x = year, y = cs, fill = winner,group = winner)) + geom_line(aes(colour=winner),size = 2) +
+  labs( x = "Year",
+        y = "Races Won",
+        title = "Race wins progression of Top 5 most successful drivers over their careers") + 
+  scale_y_continuous(breaks = seq(0,100, by=20)) + 
+  scale_x_continuous(breaks = seq(1978,2020, by=4)) + 
+  theme_classic() +
+  theme(legend.position = "none",
+        axis.title=element_text(size=14,face="bold"),
+        plot.title=element_text(size = 14,face = "bold", hjust = 0.4),
+        axis.text = element_text(size = 14,vjust = 2.5,hjust = 0.7)) +
+    annotate("text", x = 1994, y = 57, label = "Alain Prost", fontface = 2) +
+    annotate("text", x = 1995, y = 45, label = "Ayrton Senna", fontface = 2) +
+    annotate("text", x = 2008, y = 96, label = "Michael Schumacher", fontface = 2) +
+    annotate("text", x = 2018, y = 99, label = "Lewis Hamilton", fontface = 2) +
+    annotate("text", x = 2019, y = 40, label = "Sebastian Vettel", fontface = 2)
+  
+  
+```
+
+Lewis Hamilton career wins are the most impressive from 2014 onward with a steep addition in race wins. Michael Schumachers race wins rate is nearly identical to Lewis Hamilton but with an occasional slow down in some periods. Both had careers ranging approximately 12 years over which they gathered over 90 wins each. Sebestian Vettel had a better start compared to his rival Lewis Hamilton bagging a lot wins and consequently championships from 2010-2013. From 2014 onwards with his move to Ferrari, the rate of race wins decreased significantly. Alain Prost gathered 51 race wins over his 11 year racing period at an average of 5 race wins a season. Ayrton Senna had a slow start with 6 wins only in his first 4 years but then displayed dominant performance over the next 6 years until his death during a race crash.
+
+### **Racing Bar Chart Visualization for Most Wins by F1 Drivers (2015-2020)**
+
+Using the subset of results for 2015-2020 from our results dataframe to visualize it using a racing bar chart. It will show how drivers rankings for most wins have changed over past 5 years.
+
+```{r, echo = FALSE, message= FALSE,warning = FALSE}
+
+# Import a table of cumulative race wins for the past 5 years`
+
+driversTable <- read_csv("https://raw.githubusercontent.com/fatimamalikk/data-visualization-2/master/project_data/cumulative_results.csv")
+
+# Prepare data for ranking
+win_ranking <- driversTable %>%
+  group_by(year) %>%
+  # The * 1 makes it possible to have non-integer ranks while sliding
+  mutate(rank = min_rank(-value) * 1,
+         Value_rel = value/value[rank==1],
+         Value_lbl = paste0(" ",value)) %>%
+  filter(rank <=10) %>%
+  arrange(value,winner) %>%
+  ungroup() %>%
+  group_by(year) %>%
+  arrange(rank, winner) %>%
+  mutate(rank = seq(1, n())) %>%
+  ungroup() 
+
+# Build individual plots for each year
+plots_year <- ggplot(win_ranking, aes(rank, group = winner, 
+                     fill = as.factor(winner), color = as.factor(winner))) +
+  geom_tile(aes(y = value/2,
+                height = value,
+                width = 0.9), alpha = 0.8, color = NA) +
+  geom_text(aes(y = 0, label = paste(winner, " ")), vjust = 0.2, hjust = 1) +
+  geom_text(aes(y=value,label = Value_lbl, hjust=0),size = 7) +
+  coord_flip(clip = "off", expand = FALSE) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_reverse() +
+  guides(color = FALSE, fill = FALSE) +
+  
+  labs(title = "Total no of wins by F1 Drivers from 2015 - {closest_state}", x = "", y = "Winners",
+       caption = "Most No of wins by F1 Drivers 2015-2020") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, vjust = 1.5, size = 22),
+        axis.ticks.y = element_blank(),  # These relate to the axes post-flip
+        axis.text.y  = element_blank(),  # These relate to the axes post-flip
+        plot.margin = margin(1,1,1,4, "cm")) +
+  
+  transition_states(year, transition_length = 3, state_length = 0) +
+  ease_aes('cubic-in-out')
+      
+
+# Save as preferred rendered format
+# It will take a minute or so to create GIF
+gif <- animate(plots_year, 200, fps = 10, duration = 9, width = 800, height = 600, renderer = gifski_renderer("gganim.gif"))
+
+```
+
+```{r, echo = FALSE, message= FALSE,warning = FALSE}
+knitr::include_graphics(gif)
+```
+
+## **Summary**
+
+I webscraped F1 race results from the past 70 seasons from the F1 website and cleaned the dataframe. Then we visualized the results via various graphs and found out that Lewis Hamilton is the most successful F1 driver in terms of race wins followed closely by Michael Schumacher. The top 5 most successful drivers had less wins in initial 2-3 years of their racing career but went on to dominate for the next 5-6 years. For race results since 2015, again Lewis Hamilton has showed his dominant form and has the highest number of wins followed by Nico Rosberg who although retired after 2016 season still ranks in 2nd place.
+title: "Final Project for Data Visualization"
+author: "Fatima Arshad"
+date: "2/23/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
