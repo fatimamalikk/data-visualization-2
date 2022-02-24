@@ -144,6 +144,36 @@ panel.background = element_blank(), axis.line = element_line(colour = "black"))
 ```
 The figure above shows the average laps for the top 10 tracks completed over an average of one hour and thirty minutes. The number of laps in a race is obtained by dividing 305 by the length of a lap, which differs from track to track. The duration of the race cannot be more than 2 hours. If the allocated time of 2 hours is exceeded, the race is considered to be finished at the end of the ongoing lap. The line graph above shows that drivers could finish the greatest number of laps i.e. 194 on the racing track situated in Indianapolis, followed by Sakhir with 84 laps. 
 
+### Visualize team Alpha Romeo and its winners
+
+The density plot/voilin plot below visualizes the most successful drivers of team Alpha Romeo/Ferrari:
+most wins by team
+
+```{r, fig.width = 11, fig.height=5.5, echo = FALSE, message= FALSE,warning = FALSE}
+#df <- as.data.table(database)
+df_team <- df[,
+                   .(winner=.N),
+                   by = .(team) ]
+#df_countries[order(df_countries$mean_lap)]  %>% top_n(10)
+
+df_top_teams <- df_team[order(df_team$winner),] %>% top_n(10)
+
+
+ggplot(data=df_top_teams, aes(x=team, y=winner,group=1)) +
+  geom_line(color="salmon", size=2) +
+  geom_point(color="chocolate", size=3.5) +
+  ggtitle("Scatterplot of top 10 F1 race tracks") +
+  labs(x="", y="Average value of laps\nper race track") +
+  theme(axis.title.y = element_text(size=7)) +
+  theme(axis.text = element_text(size=6)) +
+  theme(plot.title = element_text(size=10, hjust=0)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
+  #theme_bw()
+
+
+```
+The line graph above shows the top ten teams with the most number of wins during seasons 1050-2020. As illustrated in the graph, team Ferrari secured significantlu higher wins i.e. 239 than its counterparts. Second highest wins were secured by Mercedes followed by McLaren Mercedes on the third position.
 
 ### **Racing Bar Chart Visualization for Most Wins by F1 Drivers (2015-2020)**
 
