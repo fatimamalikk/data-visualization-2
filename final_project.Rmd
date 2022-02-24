@@ -25,6 +25,8 @@ local({r <- getOption("repos")
        options(repos=r)
 })
 
+rm(list = ls())
+
 # Load libraries
 library(tidyverse)
 library(data.table)
@@ -46,41 +48,6 @@ kable(table_format)
 ```
 
 ## Data Visualization
-
-### Visualize F1 racing tracks of top 10 countries
-
-The bar graph below visualizes the most successful drivers of seasons 1050-2020:
-
-```{r, fig.width = 5, fig.height = 3 , echo = FALSE, message= FALSE,warning = FALSE}
-df <- as.data.table(database)
-df_countries <- df[,
-                   .(mean_lap = mean(as.numeric(laps), na.rm=TRUE)),
-                   by = .(race_name) ]
-
-df_top_countries <- df_countries[order(df_countries$mean_lap)]  %>% top_n(10)
-
-ggplot(df_top_countries, aes(mean_lap, fill=factor(race_name))) +
-  geom_density(alpha=0.5) +
-  labs(title = "Price distribution for flats in different conditions")
-
-ggplot(df_top_countries, aes(race_name, mean_lap)) + 
-       geom_line() +
-       geom_point() + 
-       #geom_smooth(method = 'lm', colour='cyan4') +
-       labs(title='Scatter Plot', x='Race Track', y='Mean of Laps') +
-       theme_classic()
-
-df_box <- df[,
-              .(race_name, laps) ]
-df_box <- df_box %>% top_n(20)
-ggplot(df_box, aes(x=factor(race_name), y=laps)) +
-  geom_boxplot(color= "#006D77", fill= "#66B7B0", alpha=0.7) +
-  labs(x="District") +
-  theme_bw()
-
-```
-The number of laps in a race is obtained by dividing 305 by the length of a lap, which differs from track to track. The duration of the race cannot be more than 2 hours. If the allocated time of 2 hours is exceeded, the race is considered to be finished at the end of the ongoing lap. The figure above shows the average laps for the top 10 tracks. 
-
 
 ### Top 5 most no of wins by F1 drivers (1950-2020)
 
@@ -147,6 +114,37 @@ top_5_per_year_cs %>% ggplot(aes(x = year, y = cs, fill = winner,group = winner)
 
 Lewis Hamilton career wins are the most impressive from 2014 onward with a steep addition in race wins. Michael Schumachers race wins rate is nearly identical to Lewis Hamilton but with an occasional slow down in some periods. Both had careers ranging approximately 12 years over which they gathered over 90 wins each. Sebestian Vettel had a better start compared to his rival Lewis Hamilton bagging a lot wins and consequently championships from 2010-2013. From 2014 onwards with his move to Ferrari, the rate of race wins decreased significantly. Alain Prost gathered 51 race wins over his 11 year racing period at an average of 5 race wins a season. Ayrton Senna had a slow start with 6 wins only in his first 4 years but then displayed dominant performance over the next 6 years until his death during a race crash.
 
+### Visualize F1 racing tracks of top 10 countries
+
+The bar graph below visualizes the most successful drivers of seasons 1050-2020:
+
+```{r, fig.width = 11, fig.height=5.5, echo = FALSE, message= FALSE,warning = FALSE}
+df <- as.data.table(database)
+df_countries <- df[,
+                   .(mean_lap = mean(as.numeric(laps), na.rm=TRUE)),
+                   by = .(race_name) ]
+#df_countries[order(df_countries$mean_lap)]  %>% top_n(10)
+
+df_top_countries <- df_countries[order(df_countries$mean_lap),] %>% top_n(10)
+
+
+ggplot(data=df_top_countries, aes(x=race_name, y=mean_lap,group=1)) +
+  geom_line(color="salmon", size=2) +
+  geom_point(color="chocolate", size=3.5) +
+  ggtitle("Scatterplot of top 10 F1 race tracks") +
+  labs(x="", y="Average value of laps\nper race track") +
+  theme(axis.title.y = element_text(size=7)) +
+  theme(axis.text = element_text(size=6)) +
+  theme(plot.title = element_text(size=10, hjust=0)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"))
+  #theme_bw()
+
+
+```
+The figure above shows the average laps for the top 10 tracks completed over an average of one hour and thirty minutes. The number of laps in a race is obtained by dividing 305 by the length of a lap, which differs from track to track. The duration of the race cannot be more than 2 hours. If the allocated time of 2 hours is exceeded, the race is considered to be finished at the end of the ongoing lap. The line graph above shows that drivers could finish the greatest number of laps i.e. 194 on the racing track situated in Indianapolis, followed by Sakhir with 84 laps. 
+
+
 ### **Racing Bar Chart Visualization for Most Wins by F1 Drivers (2015-2020)**
 
 Using the subset of results for 2015-2020 from our results dataframe to visualize it using a racing bar chart. It will show how drivers rankings for most wins have changed over past 5 years.
@@ -210,32 +208,3 @@ knitr::include_graphics(gif)
 ## **Summary**
 
 I webscraped F1 race results from the past 70 seasons from the F1 website and cleaned the dataframe. Then we visualized the results via various graphs and found out that Lewis Hamilton is the most successful F1 driver in terms of race wins followed closely by Michael Schumacher. The top 5 most successful drivers had less wins in initial 2-3 years of their racing career but went on to dominate for the next 5-6 years. For race results since 2015, again Lewis Hamilton has showed his dominant form and has the highest number of wins followed by Nico Rosberg who although retired after 2016 season still ranks in 2nd place.
-title: "Final Project for Data Visualization"
-author: "Fatima Arshad"
-date: "2/23/2022"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
